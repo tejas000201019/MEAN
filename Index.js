@@ -2,7 +2,8 @@ var Express = require("express");
 var Mongoclient = require('mongodb').MongoClient;
 var cors = require("cors");
 const multer = require("multer");
-const bodyParser = require('body-parser')
+const bodyParser = require('body-parser');
+const { json } = require("body-parser");
 var app = Express();
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json())
@@ -29,9 +30,10 @@ app.get('/api/user-color/get', (request, response) => {
 })
 
 //Get By Id
-app.get('/api/user-color/get-by-id/:id', (request, response) => {
+app.get('/api/user-color/get-by-id/:id', async (request, response) => {
     const UId = request.params.id;
-    database.collection("userColors").findOne({ "UserId": Number(UId) }, function(err,res){
+    await database.collection("userColors").findOne({ "UserId": Number(UId) }, function(err,res){
+        console.log('GetID: ',res);
         response.send(res);
     });
 })
@@ -47,9 +49,11 @@ app.patch('/api/user-color/update-partial/:id', (request, response) => {
 // Update 
 app.put('/api/user-color/update/:id', (request, response) => {
     const UId = request.params.id;
-    database.collection("userColors").update({ UserId: UId }, request.body).toArray((error, result) => {
-        response.send(result);
-    });
+    console.log('Params: ',UId);
+    
+    database.collection("userColors")
+    .updateOne({ "UserId": Number(UId) }, {$set:{UserId: request.body.UserId, colors:request.body.colors}});
+    response.json("User color updated.");
 })
 
 app.post('/api/user-color/save-user-color', multer().none(), (request, response) => {
@@ -59,6 +63,26 @@ app.post('/api/user-color/save-user-color', multer().none(), (request, response)
             colors: request.body.colors
         });
         response.json("User color added.");
+    });
+})
+
+app.post('/api/user-color/update-user-color',multer().none(), async (request, response) => {
+    const UId = request.body.UserId;
+    let userColorData=[];
+    await database.collection("userColors").findOne({ "UserId": Number(UId) }, function (err, user) {
+        console.log(user);
+        userColorData = user.colors;
+    });
+    userColorData.push(request.body.colors);
+    console.log('colorArray after pushed new data: ',userColorData);
+    await database.collection("userColors").updateOne({
+         $set: {
+            UserId: request.body.UserId,
+            colors: userColorData
+         }  
+    },function(err,res){
+        console.log(res);
+        response.json('User color has been changed.');
     });
 })
 
@@ -100,10 +124,10 @@ app.post('/api/all-user/add-user', multer().none(), async (request, response) =>
 })
 
 //GetByUserID
-app.get('/api/all-user/get-by-id/:id', (req, resp) => {
+app.get('/api/all-user/get-by-id/:id', async (req, resp) => {
     const userId = req.params.id;
     console.log('User ka ID: ', userId);
-    database.collection("users").findOne({ "UserId": Number(userId) }, function (err, user) {
+    await database.collection("users").findOne({ "UserId": Number(userId) }, function (err, user) {
         console.log(user);
         resp.send(user);
     })
