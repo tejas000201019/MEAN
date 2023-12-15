@@ -47,11 +47,11 @@ app.patch('/api/user-color/update-partial/:id', (request, response) => {
 })
 
 // Update 
-app.put('/api/user-color/update/:id', (request, response) => {
+app.put('/api/user-color/update/:id', async(request, response) => {
     const UId = request.params.id;
     console.log('Params: ',UId);
     
-    database.collection("userColors")
+   await database.collection("userColors")
     .updateOne({ "UserId": Number(UId) }, {$set:{UserId: request.body.UserId, colors:request.body.colors}});
     response.json("User color updated.");
 })
@@ -132,5 +132,13 @@ app.get('/api/all-user/get-by-id/:id', async (req, resp) => {
         resp.send(user);
     })
 
+})
+
+app.delete('/api/all-user/delete-by-id/:id', async (req, resp)=>{
+    const userId = req.params.id;
+    await database.collection("userColors").deleteOne({"UserId":Number(userId)}, function(err,res){
+        database.collection("users").deleteOne({"UserId":Number(userId)});
+        resp.json("User deleted successfully.");
+    });
 })
 
