@@ -142,3 +142,11 @@ app.delete('/api/all-user/delete-by-id/:id', async (req, resp)=>{
     });
 })
 
+// Update User
+app.put('/api/all-user/update/:id', async(request, response) => {
+    const UId = request.params.id;
+    
+   await database.collection("users")
+    .updateOne({ "UserId": Number(UId) }, {$set:{UserId: request.body.UserId, UserType:request.body.UserType}});
+    response.json("User updated successfully!");
+})
